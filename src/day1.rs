@@ -2,12 +2,26 @@ use std::cmp::Ordering;
 
 use itertools::{Itertools, sorted};
 
-use crate::utils;
+use crate::utils::read_lines;
 
 const TARGET: i32 = 2020;
 
+
+fn parse_file1(filename: &str) -> Vec<i32> {
+    let mut all = vec![];
+
+    if let Ok(lines) = read_lines(filename) {
+        for line in lines {
+            if let Ok(value) = line {
+                all.push(value.parse::<i32>().unwrap());
+            }
+        }
+    }
+    return all;
+}
+
 pub fn solve1(n: usize) -> Option<i32> {
-    utils::parse_file("src/day1.txt")
+    parse_file1("src/day1.txt")
         .into_iter()
         .combinations(n)
         .filter(|vec| vec.iter().sum::<i32>() == TARGET)
@@ -16,7 +30,7 @@ pub fn solve1(n: usize) -> Option<i32> {
 }
 
 fn solve2(n: usize) -> Option<i32> {
-    utils::parse_file("src/day1.txt")
+    parse_file1("src/day1.txt")
         .iter()
         .copied()
         .tuple_combinations()
@@ -25,7 +39,7 @@ fn solve2(n: usize) -> Option<i32> {
 }
 
 pub fn solve_fast(n: usize) -> Option<i32> {
-    let items = sorted(utils::parse_file("src/day1.txt")).collect_vec();
+    let items = sorted(parse_file1("src/day1.txt")).collect_vec();
     solve(&items, TARGET, n)
 }
 
@@ -53,3 +67,24 @@ fn search(items: &[i32], target: i32) -> Option<i32> {
     }
 }
 
+
+pub fn day1_benchmark() {
+    println!("{} {}",
+             solve1(2).expect("No solution"),
+             solve1(3).expect("No solution"));
+    timeit!({
+        solve1(2);
+        solve1(3);
+    });
+    // 1 loops: 557.8177 ms
+
+    println!("{} {}",
+             solve_fast(2).expect("No solution"),
+             solve_fast(3).expect("No solution")
+    );
+    timeit!({
+         solve_fast(2);
+         solve_fast(3);
+    });
+    // 1000 loops: 1.0746479 ms
+}
