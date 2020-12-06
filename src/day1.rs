@@ -26,19 +26,6 @@ const HARD2: Input = Input {
     target: 6,
 };
 
-fn parse_file(filename: &str) -> Vec<Int> {
-    let mut all = vec![];
-
-    if let Ok(lines) = read_lines(filename) {
-        for line in lines {
-            if let Ok(value) = line {
-                all.push(value.parse::<Int>().unwrap());
-            }
-        }
-    }
-    return all;
-}
-
 
 fn solve_fast(input: Input, n: usize) -> Option<Int2> {
     let items = sorted(parse_file(&input.filename)).rev().collect_vec();
@@ -64,12 +51,8 @@ fn find_index(items: &[Int], value: Int) -> Option<usize> {
     }
     let j = items.len() / 2;
     match items[j].cmp(&value) {
-        Ordering::Equal => {
-            Some(j)
-        }
-        Ordering::Less => {
-            find_index(&items[0..j], value)
-        }
+        Ordering::Equal => { Some(j) }
+        Ordering::Less => { find_index(&items[0..j], value) }
         Ordering::Greater => {
             find_index(&items[j + 1..], value)
                 .map(|index| index + j + 1)
@@ -123,4 +106,16 @@ fn solve2(input: Input, n: usize) -> Option<Int2> {
         .tuple_combinations()
         .find(|(a, b, c)| a + b + c == input.target)
         .map(|(a, b, c)| (a * b * c) as Int2)
+}
+
+fn parse_file(filename: &str) -> Vec<Int> {
+    let mut all = vec![];
+    if let Ok(lines) = read_lines(filename) {
+        for line in lines {
+            if let Ok(value) = line {
+                all.push(value.parse::<Int>().unwrap());
+            }
+        }
+    }
+    return all;
 }
