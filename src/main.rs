@@ -13,7 +13,7 @@ mod utils;
 
 
 fn main() {
-    // day1_benchmark();
-    day2_benchmark();
+    day1_benchmark();
+    // day2_benchmark();
 }
 
