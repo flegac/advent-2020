@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::cmp::{max, min, Ordering};
 
 use itertools::{Itertools, sorted};
 
@@ -7,14 +7,26 @@ use crate::utils::read_lines;
 type Int = u32;
 type Int2 = u64;
 
-// const FILENAME: &str = "src/day1.txt";
-// const TARGET: Int = 2020;
+struct Input<'a> {
+    filename: &'a str,
+    target: Int,
+}
 
-const FILENAME: &str = "src/bad_case.txt";
-const TARGET: Int = 300006;
+const BASIC: Input = Input {
+    filename: "src/day1.txt",
+    target: 2020,
+};
 
+const HARD1: Input = Input {
+    filename: "src/bad_case.txt",
+    target: 600006,
+};
+const HARD2: Input = Input {
+    filename: "src/bad_case2.txt",
+    target: 6,
+};
 
-fn parse_file1(filename: &str) -> Vec<Int> {
+fn parse_file(filename: &str) -> Vec<Int> {
     let mut all = vec![];
 
     if let Ok(lines) = read_lines(filename) {
@@ -27,56 +39,43 @@ fn parse_file1(filename: &str) -> Vec<Int> {
     return all;
 }
 
-pub fn solve1(n: usize) -> Option<Int2> {
-    parse_file1(FILENAME)
-        .into_iter()
-        .combinations(n)
-        .filter(|vec| vec.iter().sum::<Int>() == TARGET)
-        .find(|vec| vec.iter().sum::<Int>() == TARGET)
-        .map(|vec| vec.iter().product::<Int>() as Int2)
-}
 
-fn solve2(n: usize) -> Option<Int2> {
-    parse_file1(FILENAME)
-        .iter()
-        .copied()
-        .tuple_combinations()
-        .find(|(a, b, c)| a + b + c == TARGET)
-        .map(|(a, b, c)| (a * b * c) as Int2)
-}
-
-pub fn solve_fast(n: usize) -> Option<Int2> {
-    let items = sorted(parse_file1(FILENAME)).collect_vec();
-    solve(&items, TARGET, n)
+fn solve_fast(input: Input, n: usize) -> Option<Int2> {
+    let items = sorted(parse_file(&input.filename)).rev().collect_vec();
+    solve(&items, input.target, n)
 }
 
 fn solve(items: &[Int], target: Int, n: usize) -> Option<Int2> {
     if n == 1 {
-        return search(items, target);
+        find_index(items, target).map(|index| items[index] as Int2)
+    } else {
+        (0..items.len())
+            .filter(|i| items[*i] <= target)
+            .map(|i| (i, solve(&items[i + 1..], target - items[i], n - 1)))
+            .find(|(i, x)| x.is_some())
+            .map(|(i, x)| x.map(|x| x * items[i] as Int2))
+            .flatten()
     }
-    for i in 0..items.len() {
-        if items[i] > target {
-            break
-        }
-        if let Some(value) = solve(&items[i + 1..], target - items[i], n - 1) {
-            return Some(value * items[i] as Int2);
-        }
-    }
-    None
 }
 
-fn search(items: &[Int], target: Int) -> Option<Int2> {
-    if items.is_empty() || target < items[0] || target > items[items.len() - 1] {
+fn find_index(items: &[Int], value: Int) -> Option<usize> {
+    if items.is_empty() || items[items.len() - 1] > value || value > items[0] {
         return None;
     }
     let j = items.len() / 2;
-    match items[j].cmp(&target) {
-        Ordering::Equal => { Some(target as Int2) }
-        Ordering::Greater => { search(&items[0..j], target) }
-        Ordering::Less => { search(&items[j + 1..], target) }
+    match items[j].cmp(&value) {
+        Ordering::Equal => {
+            Some(j)
+        }
+        Ordering::Less => {
+            find_index(&items[0..j], value)
+        }
+        Ordering::Greater => {
+            find_index(&items[j + 1..], value)
+                .map(|index| index + j + 1)
+        }
     }
 }
-
 
 pub fn day1_benchmark() {
     // println!("{} {}",
@@ -86,15 +85,42 @@ pub fn day1_benchmark() {
     //     solve1(2);
     //     solve1(3);
     // });
-    // 1 loops: 557.8177 ms
 
     println!("{} {}",
-             solve_fast(2).expect("No solution"),
-             solve_fast(3).expect("No solution")
+             solve_fast(BASIC, 2).expect("No solution"),
+             solve_fast(BASIC, 3).expect("No solution")
     );
     timeit!({
-         solve_fast(2);
-         solve_fast(3);
+         solve_fast(BASIC, 2);
+         solve_fast(BASIC, 3);
     });
-    // 1000 loops: 1.0746479 ms
+
+    timeit!({
+         solve_fast(HARD1, 2);
+         solve_fast(HARD1, 3);
+    });
+
+    timeit!({
+         solve_fast(HARD2, 2);
+         solve_fast(HARD2, 3);
+    });
+}
+
+
+fn solve1(input: Input, n: usize) -> Option<Int2> {
+    parse_file(&input.filename)
+        .into_iter()
+        .combinations(n)
+        .filter(|vec| vec.iter().sum::<Int>() == input.target)
+        .find(|vec| vec.iter().sum::<Int>() == input.target)
+        .map(|vec| vec.iter().product::<Int>() as Int2)
+}
+
+fn solve2(input: Input, n: usize) -> Option<Int2> {
+    parse_file(&input.filename)
+        .iter()
+        .copied()
+        .tuple_combinations()
+        .find(|(a, b, c)| a + b + c == input.target)
+        .map(|(a, b, c)| (a * b * c) as Int2)
 }
